@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Когнитивный калькулятор</title>
+
+<style>
+body{
+  margin:0;
+  background:#000;
+  color:#fff;
+  font-family:Segoe UI, sans-serif;
+  display:flex;
+  justify-content:center;
+  padding:20px;
+}
+.card{
+  max-width:700px;
+  width:100%;
+  background:#111;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 0 30px rgba(0,255,255,.2);
+}
+h2,h3{
+  text-align:center;
+}
+button{
+  width:100%;
+  margin:8px 0;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  background:#1a1a1a;
+  color:#fff;
+  cursor:pointer;
+  transition:.2s;
+}
+button:hover{transform:scale(1.02)}
+.selected{
+  background:linear-gradient(270deg,#00f4ff,#0600ff);
+  background-size:400% 400%;
+  animation:glow 2s infinite;
+}
+@keyframes glow{
+  0%{background-position:0%}
+  50%{background-position:100%}
+  100%{background-position:0%}
+}
+.panel{
+  background:#0c0c0c;
+  padding:15px;
+  border-radius:15px;
+  margin-top:15px;
+}
+input,textarea{
+  width:100%;
+  background:#000;
+  color:#fff;
+  border:1px solid #333;
+  border-radius:10px;
+  padding:10px;
+}
+label{font-size:.9em}
+.small{font-size:.8em;color:#aaa}
+</style>
+</head>
+
+<body>
+<div class="card" id="app">
+  <h2>Когнитивный калькулятор</h2>
+</div>
+
+<script>
+// ================== ТЕСТ ==================
+const questions = [
+ {q:"Как ты воспринимаешь реальность?", a:[
+  ["Se","Через ощущения и действия сейчас"],
+  ["Si","Через прошлый опыт и память"]
+ ]},
+ {q:"Как ты видишь идеи и будущее?", a:[
+  ["Ni","Один смысл и направление"],
+  ["Ne","Много вариантов и идей"]
+ ]},
+ {q:"Как ты определяешь ценность?", a:[
+  ["Fi","По внутренним чувствам"],
+  ["Fe","По эмоциям других"]
+ ]},
+ {q:"Как ты проверяешь решение?", a:[
+  ["Ti","Логика и структура"],
+  ["Te","Практический результат"]
+ ]}
+];
+
+let step=0;
+let answers=[];
+let score={Ni:0,Ne:0,Si:0,Se:0,Fi:0,Fe:0,Ti:0,Te:0};
+
+// ================== ПАМЯТЬ ==================
+let memory = JSON.parse(localStorage.getItem("memory")||"[]");
+
+function remember(role,content){
+  const on=document.getElementById("memToggle").checked;
+  if(!on) return;
+  memory.push({role,content});
+  if(memory.length>6) memory.shift();
+  localStorage.setItem("memory",JSON.stringify(memory));
+}
+
+function clearMemory(){
+  memory=[];
+  localStorage.removeItem("memory");
+  alert("Память очищена");
+}
+
+// ================== РЕНДЕР ==================
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="<h2>Когнитивный калькулятор</h2>";
+
+  if(step>=questions.length){
+    let r="<div class='panel'><h3>Результат</h3>";
+    for(let k in score) r+=`${k}: ${score[k]}<br>`;
+    r+=`<button onclick="reset()">Пройти заново</button></div>`;
+    app.innerHTML+=r;
+    renderChat();
+    return;
+  }
+
+  const q=questions[step];
+  app.innerHTML+=`<p><b>${q.q}</b></p>`;
+
+  q.a.forEach(o=>{
+    const b=document.createElement("button");
+    b.textContent=o[1];
+    if(answers[step]==o[0]) b.classList.add("selected");
+    b.onclick=()=>{
+      if(answers[step]) score[answers[step]]--;
+      answers[step]=o[0];
+      score[o[0]]++;
+      step++;
+      render();
+    };
+    app.appendChild(b);
+  });
+}
+
+function reset(){
+  step=0;
+  answers=[];
+  for(let k in score) score[k]=0;
+  render();
+}
+
+// ================== ЧАТ ==================
+function renderChat(){
+  const app=document.getElementById("app");
+  app.innerHTML+=`
+  <div class="panel">
+    <h3>ИИ-собеседник</h3>
+
+    <label>
+      <input type="checkbox" id="memToggle" checked>
+      Включить память
+    </label>
+
+    <textarea id="userText" placeholder="Спроси что-нибудь..."></textarea>
+    <button onclick="askAI()">Спросить</button>
+    <button onclick="clearMemory()">Очистить память</button>
+
+    <div id="aiAnswer" class="small"></div>
+  </div>`;
+}
+
+function askAI(){
+  const t=document.getElementById("userText").value.trim();
+  if(!t) return;
+
+  remember("user",t);
+
+  // 🔌 ЗАГЛУШКА (сюда подключается OpenAI API)
+  const answer="🤔🧩 Я анализирую твой запрос логически и концептуально.";
+  remember("assistant",answer);
+
+  document.getElementById("aiAnswer").innerText=answer;
+  document.getElementById("userText").value="";
+}
+
+// ================== START ==================
+render();
+</script>
+</body>
+</html>

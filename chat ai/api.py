@@ -1,0 +1,1 @@
+fconst OPENAI_API_KEY = "PASTE_YOUR_KEY_HERE";
